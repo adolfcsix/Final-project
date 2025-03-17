@@ -16,108 +16,36 @@ import java.util.Optional;
 @RequestMapping("/api/products")
 public class ProductController {
 
-    private final ProductService productService;
-
-
-    private void validateToken(HttpServletRequest request) throws Exception {
-        String authHeader = request.getHeader("Authorization");
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            throw new Exception("Missing or invalid Authorization header");
-        }
-        String token = authHeader.substring(7); // Extract the token part
-        JwtUtil.verifyToken(token); // Validate the token
-    }
     @Autowired
-    public ProductController(ProductService productService) {
-        this.productService = productService;
-    }
+    private ProductService productService;
 
-//    @GetMapping
-//    public List<Product> getAllProducts() {
-//        return productService.getAllProducts();
-//    }
-
+    // Get all products
     @GetMapping
-    public ResponseEntity<List<Product>> getAllProducts(HttpServletRequest request) {
-        try {
-            validateToken(request);
-            return new ResponseEntity<>(productService.getAllProducts(), HttpStatus.OK);
-        } catch (Exception e) {
-            return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
-        }
+    public List<Product> getAllProducts() {
+        return productService.getAllProducts();
     }
 
-//    @GetMapping("/{id}")
-//    public ResponseEntity<Product> getProductById(@PathVariable String id) {
-//        Optional<Product> product = productService.getProductById(id);
-//        return product.map(ResponseEntity::ok)
-//                .orElseGet(() -> ResponseEntity.notFound().build());
-//    }
-
+    // Get product by ID
     @GetMapping("/{id}")
-    public ResponseEntity<Product> getProductById(@PathVariable String id, HttpServletRequest request) {
-        try {
-            validateToken(request);
-            Optional<Product> product = productService.getProductById(id);
-            return product.map(value -> new ResponseEntity<>(value, HttpStatus.OK))
-                    .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
-        } catch (Exception e) {
-            return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
-        }
+    public Optional<Product> getProductById(@PathVariable String id) {
+        return productService.getProductById(id);
     }
 
-    /**
-     * Create a new product (requires valid JWT token).
-     *
-     * @param product The product to create.
-     * @param request The HTTP request.
-     * @return The created product.
-     */
+    // Create a new product
     @PostMapping
-    public ResponseEntity<Product> createProduct(@RequestBody Product product, HttpServletRequest request) {
-        try {
-            validateToken(request);
-            Product createdProduct = productService.addProduct(product);
-            return new ResponseEntity<>(createdProduct, HttpStatus.CREATED);
-        } catch (Exception e) {
-            return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
-        }
+    public Product createProduct(@RequestBody Product product) {
+        return productService.createProduct(product);
     }
 
-    @GetMapping("/category/{category}")
-    public List<Product> getProductsByCategory(@PathVariable String category) {
-        return productService.getProductsByCategory(category);
-    }
-
-//    @PostMapping
-//    public ResponseEntity<Product> createProduct(@RequestBody Product product) {
-//        Product createdProduct = productService.addProduct(product);
-//        return new ResponseEntity<>(createdProduct, HttpStatus.CREATED);
-//    }
-
+    // Update a product
     @PutMapping("/{id}")
-    public ResponseEntity<Product> updateProduct( HttpServletRequest request, @PathVariable String id, @RequestBody Product product) {
-        try {
-            validateToken(request);
-            Product updatedProduct = productService.updateProduct(id, product);
-            return new ResponseEntity<>(updatedProduct, HttpStatus.OK);
-        } catch (Exception e) {
-            return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
-        }
+    public Product updateProduct(@PathVariable String id, @RequestBody Product product) {
+        return productService.updateProduct(id, product);
     }
 
+    // Delete a product
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteProduct( HttpServletRequest request, @PathVariable String id) {
-
-        try {
-            validateToken(request);
-            productService.deleteProduct(id);
-            return ResponseEntity.noContent().build();
-//            Product updatedProduct = productService.updateProduct(id, product);
-//            return new ResponseEntity<>(null, HttpStatus.OK);
-        } catch (Exception e) {
-            return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
-        }
-
+    public void deleteProduct(@PathVariable String id) {
+        productService.deleteProduct(id);
     }
 }

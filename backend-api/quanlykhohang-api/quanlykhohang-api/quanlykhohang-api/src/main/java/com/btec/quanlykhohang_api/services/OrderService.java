@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -19,70 +20,42 @@ public class OrderService {
 
     @Autowired
     private OrderRepository orderRepository;
-    @Autowired
-    private ProductRepository productRepository;
+
     // Get all orders
     public List<Order> getAllOrders() {
         return orderRepository.findAll();
     }
 
-    // Get an order by ID
+    // Get order by ID
     public Optional<Order> getOrderById(String id) {
         return orderRepository.findById(id);
     }
 
-    // Create or update an order
-//    public Order saveOrder(Order order) {
-//        order.setCreatedDate(new Date());
-//        order.setProducts(null);
-//        return orderRepository.save(order);
-//    }
+    // Get orders by user ID
+    public List<Order> getOrdersByUserId(String userId) {
+        return orderRepository.findByUserId(userId);
+    }
 
-    // Create or update an order
-    public Order saveOrder(Order order) {
-        if (order.getProductIds() != null && !order.getProductIds().isEmpty()) {
-            List<Product> products = productRepository.findAllById(order.getProductIds());
-            order.setProducts(products);
+    // Get orders by status
+    public List<Order> getOrdersByStatus(String status) {
+        return orderRepository.findByStatus(status);
+    }
 
-            double total = 0;
-            for(Product p: products){
-                total = total + p.getPrice();
-
-            }
-            order.setCreatedDate(new Date());
-            order.setTotalPrice(total);
-
-            // Populate product details
-        }
+    // Create a new order
+    public Order createOrder(Order order) {
+        order.setOrderDate(LocalDateTime.now()); // Set order date to now
         return orderRepository.save(order);
     }
 
-
-    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyyMMdd");
-
-    // Fetch orders within a date range
-//    public List<Order> getOrderFromDateToDateyyyyMMdd(Long startDate, Long endDate) throws ParseException, ParseException {
-//        // Convert Long to Date
-//        Date start = DATE_FORMAT.parse(String.valueOf(startDate));
-//        Date end = DATE_FORMAT.parse(String.valueOf(endDate));
-//        return orderRepository.findByCreatedDateBetween(start, end);
-//    }
-
-    public List<Order> getOrderFromDateToDateyyyyMMdd(Long startDate, Long endDate) throws ParseException {
-        // Create a SimpleDateFormat instance for yyyyMMdd format
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
-        // Set the timezone to UTC
-        dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-
-        // Convert Long to Date
-        Date start = dateFormat.parse(String.valueOf(startDate));
-        Date end = dateFormat.parse(String.valueOf(endDate));
-
-        // Adjust the end date to include the entire day
-        end = new Date(end.getTime() + (24 * 60 * 60 * 1000) - 1);
-
-        // Fetch orders between the two dates
-        return orderRepository.findByCreatedDateBetween(start, end);
+    // Update an existing order
+    public Order updateOrder(String id, Order updatedOrder) {
+        return orderRepository.findById(id).map(order -> {
+            order.setUserId(updatedOrder.getUserId());
+            order.setCategory(updatedOrder.getCategory());
+            order.setOrderDate(updatedOrder.getOrderDate());
+            order.setStatus(updatedOrder.getStatus());
+            return orderRepository.save(order);
+        }).orElseThrow(() -> new RuntimeException("Order not found with id " + id));
     }
 
     // Delete an order by ID

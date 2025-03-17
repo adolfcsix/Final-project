@@ -5,43 +5,45 @@ import com.btec.quanlykhohang_api.repositories.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 @Service
 public class ProductService {
 
-    private final ProductRepository productRepository;
-
     @Autowired
-    public ProductService(ProductRepository productRepository) {
-        this.productRepository = productRepository;
-    }
+    private ProductRepository productRepository;
 
+    // Get all products
     public List<Product> getAllProducts() {
         return productRepository.findAll();
     }
 
+    // Get product by ID
     public Optional<Product> getProductById(String id) {
         return productRepository.findById(id);
     }
 
-    public List<Product> getProductsByCategory(String category) {
-        return productRepository.findByCategory(category);
-    }
-
-    public Product addProduct(Product product) {
+    // Create a new product
+    public Product createProduct(Product product) {
+        product.setCreatedDate(LocalDateTime.now()); // Set created date
         return productRepository.save(product);
     }
 
-    public Product updateProduct(String id, Product productDetails) {
-        if (productRepository.existsById(id)) {
-            productDetails.setId(id);
-            return productRepository.save(productDetails);
-        }
-        return null;
+    // Update product
+    public Product updateProduct(String id, Product updatedProduct) {
+        return productRepository.findById(id).map(product -> {
+            product.setName(updatedProduct.getName());
+            product.setCategory(updatedProduct.getCategory());
+            product.setQuantity(updatedProduct.getQuantity());
+            product.setPrice(updatedProduct.getPrice());
+            product.setSupplierId(updatedProduct.getSupplierId());
+            return productRepository.save(product);
+        }).orElseThrow(() -> new RuntimeException("Product not found with id " + id));
     }
 
+    // Delete product
     public void deleteProduct(String id) {
         productRepository.deleteById(id);
     }
