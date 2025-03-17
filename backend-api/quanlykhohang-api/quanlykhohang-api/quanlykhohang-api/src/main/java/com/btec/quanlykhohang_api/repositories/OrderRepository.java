@@ -9,8 +9,9 @@ import java.util.List;
 
 @Repository
 public interface OrderRepository extends MongoRepository<Order, String> {
-    List<Order> findByCreatedDateBetween(Date startDate, Date endDate);
 
+    List<Order> findByUserId(String userId);  // Find orders by user ID
 
+    List<Order> findByStatus(String status);  // Find orders by status
 }
 

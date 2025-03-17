@@ -9,13 +9,13 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
-@Document(collection = "users")
-public class User {
+@Document(collection = "warehouses") // Maps to MongoDB "warehouses" collection
+public class Warehouse {
 
     @Id
-    private String id;
-    private String email;
-    private String password;
-    private String fullName;
-    private String address;
+    private String id;  // MongoDB automatically assigns an ObjectId
+
+    private String location;
+
+    private int capacity;
 }

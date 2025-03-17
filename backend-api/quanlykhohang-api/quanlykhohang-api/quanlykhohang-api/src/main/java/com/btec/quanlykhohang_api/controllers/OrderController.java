@@ -25,39 +25,39 @@ public class OrderController {
         return orderService.getAllOrders();
     }
 
-    // Fetch orders between startDate and endDate (yyyyMMdd format)
-    @GetMapping("/between-dates")
-    public ResponseEntity<List<Order>> getOrdersBetweenDates(
-            @RequestParam("startDate") Long startDate,
-            @RequestParam("endDate") Long endDate) {
-        try {
-            List<Order> orders = orderService.getOrderFromDateToDateyyyyMMdd(startDate, endDate);
-            return ResponseEntity.ok(orders);
-        } catch (ParseException e) {
-            // Handle invalid date format
-            return ResponseEntity.badRequest().body(null);
-        }
-    }
-
-    // Get an order by ID
+    // Get order by ID
     @GetMapping("/{id}")
-    public ResponseEntity<Order> getOrderById(@PathVariable String id) {
-        Optional<Order> order = orderService.getOrderById(id);
-        return order.map(value -> new ResponseEntity<>(value, HttpStatus.OK))
-                .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
+    public Optional<Order> getOrderById(@PathVariable String id) {
+        return orderService.getOrderById(id);
     }
 
-    // Create or update an order
+    // Get orders by user ID
+    @GetMapping("/user/{userId}")
+    public List<Order> getOrdersByUserId(@PathVariable String userId) {
+        return orderService.getOrdersByUserId(userId);
+    }
+
+    // Get orders by status
+    @GetMapping("/status/{status}")
+    public List<Order> getOrdersByStatus(@PathVariable String status) {
+        return orderService.getOrdersByStatus(status);
+    }
+
+    // Create a new order
     @PostMapping
-    public ResponseEntity<Order> createOrder(@RequestBody Order order) {
-        Order savedOrder = orderService.saveOrder(order);
-        return new ResponseEntity<>(savedOrder, HttpStatus.CREATED);
+    public Order createOrder(@RequestBody Order order) {
+        return orderService.createOrder(order);
+    }
+
+    // Update an order
+    @PutMapping("/{id}")
+    public Order updateOrder(@PathVariable String id, @RequestBody Order order) {
+        return orderService.updateOrder(id, order);
     }
 
     // Delete an order
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteOrder(@PathVariable String id) {
+    public void deleteOrder(@PathVariable String id) {
         orderService.deleteOrder(id);
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 }

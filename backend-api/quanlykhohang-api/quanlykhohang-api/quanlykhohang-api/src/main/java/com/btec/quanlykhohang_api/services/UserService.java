@@ -35,18 +35,16 @@ public class UserService {
         return userRepository.findById(id);
     }
 
-    public User updateUser(String id, User updatedUser) {
-        Optional<User> userOptional = userRepository.findById(id);
-        if (userOptional.isPresent()) {
-            User user = userOptional.get();
-            user.setFirstName(updatedUser.getFirstName());
-            user.setLastName(updatedUser.getLastName());
-            user.setBirthDay(updatedUser.getBirthDay());
-            user.setActive(updatedUser.isActive());
-            user.setAddress(updatedUser.getAddress());
+    public User updateUser(String id, User userDetails) {
+        return userRepository.findById(id).map(user -> {
+            user.setFullName(userDetails.getFullName());
+            user.setEmail(userDetails.getEmail());
+            user.setAddress(userDetails.getAddress());
+            if (userDetails.getPassword() != null && !userDetails.getPassword().isEmpty()) {
+                user.setPassword(passwordEncoder.encode(userDetails.getPassword())); // Hash new password
+            }
             return userRepository.save(user);
-        }
-        return null;
+        }).orElseThrow(() -> new RuntimeException("User not found with id " + id));
     }
 
     public void deleteUser(String id) {
