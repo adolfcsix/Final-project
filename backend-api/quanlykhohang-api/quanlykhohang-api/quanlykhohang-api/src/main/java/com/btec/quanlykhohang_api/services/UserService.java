@@ -7,8 +7,11 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 
 @Service
 public class UserService {
@@ -19,9 +22,18 @@ public class UserService {
     private PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     public User createUser(User user) {
-        // Hash the password before saving
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-        return userRepository.save(user);
+        if (userRepository.existsByEmail(user.getEmail())) {
+            throw new RuntimeException("Email already in use!");
+        }
+        if (userRepository.existsByUsername(user.getUsername())) {
+            throw new RuntimeException("Fullname already exists!");
+        }
+
+        user.setPassword(passwordEncoder.encode(user.getPassword())); // Hash password
+        user.setRoles(Set.of("USER")); // Default role
+
+        userRepository.save(user);
+        return user;
     }
     public User getUserByEmail(String email) {
         return userRepository.findByEmail(email).orElse(null);
@@ -37,7 +49,7 @@ public class UserService {
 
     public User updateUser(String id, User userDetails) {
         return userRepository.findById(id).map(user -> {
-            user.setFullName(userDetails.getFullName());
+            user.setUsername(userDetails.getUsername());
             user.setEmail(userDetails.getEmail());
             user.setAddress(userDetails.getAddress());
             if (userDetails.getPassword() != null && !userDetails.getPassword().isEmpty()) {
