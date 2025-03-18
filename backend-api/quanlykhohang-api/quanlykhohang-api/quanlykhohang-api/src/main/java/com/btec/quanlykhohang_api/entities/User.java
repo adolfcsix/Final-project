@@ -20,8 +20,9 @@ public class User {
     private String id;
     private String email;
     private String password;
-    private String username;
+    private String fullname;
     private String address;
     private Set<String> roles;
     private LocalDateTime createdAt = LocalDateTime.now();
+
 }
