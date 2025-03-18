@@ -46,6 +46,7 @@ public class AuthController {
         return new ResponseEntity<>(createdUser, HttpStatus.CREATED);
     }
 
+
     /**
      * Sign-in: Authenticate a user and return a JWT token.
      *

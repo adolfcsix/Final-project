@@ -25,7 +25,7 @@ public class UserService {
         if (userRepository.existsByEmail(user.getEmail())) {
             throw new RuntimeException("Email already in use!");
         }
-        if (userRepository.existsByUsername(user.getUsername())) {
+        if (userRepository.existsByFullname(user.getFullname())) {
             throw new RuntimeException("Fullname already exists!");
         }
 
@@ -49,7 +49,7 @@ public class UserService {
 
     public User updateUser(String id, User userDetails) {
         return userRepository.findById(id).map(user -> {
-            user.setUsername(userDetails.getUsername());
+            user.setFullname(userDetails.getFullname());
             user.setEmail(userDetails.getEmail());
             user.setAddress(userDetails.getAddress());
             if (userDetails.getPassword() != null && !userDetails.getPassword().isEmpty()) {
