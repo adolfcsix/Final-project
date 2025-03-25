@@ -1,152 +1,145 @@
-import React, { useState } from "react";
+import { useEffect, useState } from "react";
+import { Table, Button, Modal, Form, Input, Select } from "antd";
+import axios from "axios";
+import dayjs from "dayjs";
 
-const Users = () => {
-  const [users, setUsers] = useState([
-    { id: 1, name: "John Doe", email: "john@example.com", role: "Admin" },
-    { id: 2, name: "Jane Smith", email: "jane@example.com", role: "User" },
-    { id: 3, name: "Michael Brown", email: "michael@example.com", role: "Editor" },
-  ]);
+const { Option } = Select;
 
-  const [searchTerm, setSearchTerm] = useState("");
-  const [newUser, setNewUser] = useState({ name: "", email: "", role: "User" });
+const UserManagement = () => {
+  const [users, setUsers] = useState([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [form] = Form.useForm();
   const [editingUser, setEditingUser] = useState(null);
 
-  // Lọc danh sách người dùng theo từ khóa tìm kiếm
-  const filteredUsers = users.filter((user) =>
-    user.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  useEffect(() => {
+    fetchUsers();
+  }, []);
 
-  // ✅ Xóa người dùng
-  const deleteUser = (id) => {
-    setUsers(users.filter((user) => user.id !== id));
+  const fetchUsers = async () => {
+    try {
+      const response = await axios.get("http://localhost:8080/api/users");
+      setUsers(response.data);
+    } catch (error) {
+      console.error("Error fetching users", error);
+    }
   };
 
-  // ✅ Thêm người dùng mới
-  const addUser = () => {
-    if (!newUser.name || !newUser.email) return;
-    setUsers([...users, { id: users.length + 1, ...newUser }]);
-    setNewUser({ name: "", email: "", role: "User" });
+  const handleOk = async () => {
+    try {
+      const values = await form.validateFields();
+      // values.roles = values.roles.map((role) => role.trim());
+      
+      if (editingUser) {
+        await axios.put(`http://localhost:8080/api/users/${editingUser.id}`, values);
+      } else {
+        await axios.post("http://localhost:8080/api/users", values);
+      }
+      setIsModalOpen(false);
+      form.resetFields();
+      setEditingUser(null);
+      fetchUsers();
+    } catch (error) {
+      console.error("Error saving user", error);
+    }
   };
 
-  // ✅ Cập nhật người dùng
-  const updateUser = () => {
-    setUsers(users.map((user) => (user.id === editingUser.id ? editingUser : user)));
-    setEditingUser(null);
+  const handleDelete = async (id) => {
+    try {
+      await axios.delete(`http://localhost:8080/api/users/${id}`);
+      fetchUsers();
+    } catch (error) {
+      console.error("Error deleting user", error);
+    }
   };
+
+  const handleEdit = (record) => {
+    setEditingUser(record);
+    form.setFieldsValue({
+      ...record,
+      roles: record.roles || [],
+    });
+    setIsModalOpen(true);
+  };
+
+  const columns = [
+    { title: "ID", dataIndex: "id", key: "id" },
+    { title: "Email", dataIndex: "email", key: "email" },
+    {
+      title: "Password",
+      dataIndex: "password",
+      key: "password",
+      render: () => "******", // Ẩn mật khẩu
+    },
+    { title: "Full Name", dataIndex: "fullname", key: "fullname" },
+    { title: "Address", dataIndex: "address", key: "address" },
+    { 
+      title: "Roles", 
+      dataIndex: "roles", 
+      key: "roles", 
+      render: (roles) => roles.join(", ") 
+    },
+    { 
+      title: "Created At", 
+      dataIndex: "createdAt", 
+      key: "createdAt", 
+      render: (date) => dayjs(date).format("YYYY-MM-DD HH:mm") 
+    },
+    {
+      title: "Actions",
+      key: "actions",
+      render: (_, record) => (
+        <div className="flex gap-2">
+          <Button className="bg-blue-500 text-white" onClick={() => handleEdit(record)}>Edit</Button>
+          <Button className="bg-red-500 text-white" onClick={() => handleDelete(record.id)}>Delete</Button>
+        </div>
+      ),
+    },
+  ];
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Users Management</h1>
-
-      {/* Tìm kiếm */}
-      <input
-        type="text"
-        placeholder="Search users..."
-        className="border p-2 mb-4 w-full rounded"
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-      />
-
-      {/* Form thêm/sửa người dùng */}
-      <div className="mb-4">
-        <input
-          type="text"
-          placeholder="Name"
-          className="border p-2 mr-2 rounded"
-          value={editingUser ? editingUser.name : newUser.name}
-          onChange={(e) =>
-            editingUser
-              ? setEditingUser({ ...editingUser, name: e.target.value })
-              : setNewUser({ ...newUser, name: e.target.value })
-          }
-        />
-        <input
-          type="email"
-          placeholder="Email"
-          className="border p-2 mr-2 rounded"
-          value={editingUser ? editingUser.email : newUser.email}
-          onChange={(e) =>
-            editingUser
-              ? setEditingUser({ ...editingUser, email: e.target.value })
-              : setNewUser({ ...newUser, email: e.target.value })
-          }
-        />
-        <select
-          className="border p-2 mr-2 rounded"
-          value={editingUser ? editingUser.role : newUser.role}
-          onChange={(e) =>
-            editingUser
-              ? setEditingUser({ ...editingUser, role: e.target.value })
-              : setNewUser({ ...newUser, role: e.target.value })
-          }
-        >
-          <option value="User">User</option>
-          <option value="Admin">Admin</option>
-          <option value="Editor">Editor</option>
-        </select>
-        {editingUser ? (
-          <button
-            className="bg-blue-500 text-white px-4 py-2 rounded"
-            onClick={updateUser}
-          >
-            Update
-          </button>
-        ) : (
-          <button
-            className="bg-green-500 text-white px-4 py-2 rounded"
-            onClick={addUser}
-          >
-            Add
-          </button>
-        )}
+    <div className="p-6 bg-gray-100 min-h-screen">
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold">User Management</h1>
+        <Button className="bg-green-500 text-white" onClick={() => setIsModalOpen(true)}>
+          Add User
+        </Button>
       </div>
-
-      {/* Bảng hiển thị danh sách người dùng */}
-      <table className="w-full border-collapse border border-gray-300">
-        <thead>
-          <tr className="bg-gray-100">
-            <th className="border p-2">ID</th>
-            <th className="border p-2">Name</th>
-            <th className="border p-2">Email</th>
-            <th className="border p-2">Role</th>
-            <th className="border p-2">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredUsers.length > 0 ? (
-            filteredUsers.map((user) => (
-              <tr key={user.id} className="text-center">
-                <td className="border p-2">{user.id}</td>
-                <td className="border p-2">{user.name}</td>
-                <td className="border p-2">{user.email}</td>
-                <td className="border p-2">{user.role}</td>
-                <td className="border p-2">
-                  <button
-                    className="bg-yellow-500 text-white px-2 py-1 rounded mr-2"
-                    onClick={() => setEditingUser(user)}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    className="bg-red-500 text-white px-2 py-1 rounded"
-                    onClick={() => deleteUser(user.id)}
-                  >
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan="5" className="border p-4 text-center text-gray-500">
-                No users found.
-              </td>
-            </tr>
+      <Table className="bg-white p-4 shadow-md rounded-lg" dataSource={users} columns={columns} rowKey="id" />
+      <Modal
+        title="User Form"
+        open={isModalOpen}
+        onOk={handleOk}
+        onCancel={() => {
+          setIsModalOpen(false);
+          form.resetFields();
+        }}
+      >
+        <Form form={form} layout="vertical">
+          <Form.Item name="email" label="Email" rules={[{ required: true, type: "email" }]}>
+            <Input className="p-2 border rounded-md w-full" />
+          </Form.Item>
+          {!editingUser && (
+            <Form.Item name="password" label="Password" rules={[{ required: true }]}>
+              <Input className="p-2 border rounded-md w-full" type="password" />
+            </Form.Item>
           )}
-        </tbody>
-      </table>
+          <Form.Item name="fullname" label="Full Name" rules={[{ required: true }]}>
+            <Input className="p-2 border rounded-md w-full" />
+          </Form.Item>
+          <Form.Item name="address" label="Address" rules={[{ required: false }]}>
+            <Input className="p-2 border rounded-md w-full" />
+          </Form.Item>
+          {/* <Form.Item name="roles" label="Roles" rules={[{ required: false }]}>
+            <Select mode="multiple" className="w-full">
+              <Option value="Admin">Admin</Option>
+              <Option value="User">User</Option>
+              <Option value="Manager">Manager</Option>
+            </Select>
+          </Form.Item> */}
+        </Form>
+      </Modal>
     </div>
   );
 };
 
-export default Users;
+export default UserManagement;
