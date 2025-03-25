@@ -1,120 +1,101 @@
-import React, { useState } from "react";
+import { useEffect, useState } from "react";
+import { Table, Button, Modal, Form, Input, Select } from "antd";
+import axios from "axios";
 
-const Orders = () => {
-  const [orders, setOrders] = useState([
-    { id: 1, customer: "Alice", total: "$200", status: "Pending" },
-    { id: 2, customer: "Bob", total: "$350", status: "Shipped" },
-    { id: 3, customer: "Charlie", total: "$120", status: "Delivered" },
-  ]);
-
-  const [newOrder, setNewOrder] = useState({ customer: "", total: "", status: "Pending" });
+const Order = () => {
+  const [orders, setOrders] = useState([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [form] = Form.useForm();
   const [editingOrder, setEditingOrder] = useState(null);
 
-  const addOrder = () => {
-    if (!newOrder.customer || !newOrder.total) return;
-    setOrders([...orders, { id: orders.length + 1, ...newOrder }]);
-    setNewOrder({ customer: "", total: "", status: "Pending" });
+  useEffect(() => {
+    fetchOrders();
+  }, []);
+
+  const fetchOrders = async () => {
+    try {
+      const response = await axios.get("http://localhost:8080/api/orders");
+      setOrders(response.data);
+    } catch (error) {
+      console.error("Error fetching orders", error);
+    }
   };
 
-  const updateOrder = () => {
-    setOrders(orders.map((order) => (order.id === editingOrder.id ? editingOrder : order)));
-    setEditingOrder(null);
+  const handleOk = async () => {
+    try {
+      const values = await form.validateFields();
+      if (editingOrder) {
+        await axios.put(`http://localhost:8080/api/orders/${editingOrder.id}`, values);
+      } else {
+        await axios.post("http://localhost:8080/api/orders", values);
+      }
+      setIsModalOpen(false);
+      form.resetFields();
+      setEditingOrder(null);
+      fetchOrders();
+    } catch (error) {
+      console.error("Error saving order", error);
+    }
   };
 
-  const deleteOrder = (id) => {
-    setOrders(orders.filter((order) => order.id !== id));
+  const handleDelete = async (id) => {
+    try {
+      await axios.delete(`http://localhost:8080/api/orders/${id}`);
+      fetchOrders();
+    } catch (error) {
+      console.error("Error deleting order", error);
+    }
   };
+
+  const handleEdit = (record) => {
+    setEditingOrder(record);
+    form.setFieldsValue(record);
+    setIsModalOpen(true);
+  };
+
+  const columns = [
+    { title: "ID", dataIndex: "id", key: "id" },
+    { title: "User ID", dataIndex: "userId", key: "userId" },
+    { title: "Category", dataIndex: "category", key: "category" },
+    { title: "Order Date", dataIndex: "orderDate", key: "orderDate", render: (text) => new Date(text).toLocaleString() },
+    { title: "Status", dataIndex: "status", key: "status" },
+    {
+      title: "Actions",
+      key: "actions",
+      render: (text, record) => (
+        <div className="flex gap-2">
+          <Button className="bg-blue-500 text-white" onClick={() => handleEdit(record)}>Edit</Button>
+          <Button className="bg-red-500 text-white" onClick={() => handleDelete(record.id)}>Delete</Button>
+        </div>
+      ),
+    },
+  ];
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Orders Management</h1>
-
-      {/* Form thêm/sửa đơn hàng */}
-      <div className="mb-4">
-        <input
-          type="text"
-          placeholder="Customer Name"
-          className="border p-2 mr-2 rounded"
-          value={editingOrder ? editingOrder.customer : newOrder.customer}
-          onChange={(e) =>
-            editingOrder
-              ? setEditingOrder({ ...editingOrder, customer: e.target.value })
-              : setNewOrder({ ...newOrder, customer: e.target.value })
-          }
-        />
-        <input
-          type="text"
-          placeholder="Total"
-          className="border p-2 mr-2 rounded"
-          value={editingOrder ? editingOrder.total : newOrder.total}
-          onChange={(e) =>
-            editingOrder
-              ? setEditingOrder({ ...editingOrder, total: e.target.value })
-              : setNewOrder({ ...newOrder, total: e.target.value })
-          }
-        />
-        <select
-          className="border p-2 mr-2 rounded"
-          value={editingOrder ? editingOrder.status : newOrder.status}
-          onChange={(e) =>
-            editingOrder
-              ? setEditingOrder({ ...editingOrder, status: e.target.value })
-              : setNewOrder({ ...newOrder, status: e.target.value })
-          }
-        >
-          <option value="Pending">Pending</option>
-          <option value="Shipped">Shipped</option>
-          <option value="Delivered">Delivered</option>
-        </select>
-        {editingOrder ? (
-          <button className="bg-blue-500 text-white px-4 py-2 rounded" onClick={updateOrder}>
-            Update
-          </button>
-        ) : (
-          <button className="bg-green-500 text-white px-4 py-2 rounded" onClick={addOrder}>
-            Add
-          </button>
-        )}
+    <div className="p-6 bg-gray-100 min-h-screen">
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold">Order Management</h1>
+        <Button className="bg-green-500 text-white" onClick={() => setIsModalOpen(true)}>
+          Add Order
+        </Button>
       </div>
-
-      {/* Bảng đơn hàng */}
-      <table className="w-full border-collapse border border-gray-300">
-        <thead>
-          <tr className="bg-gray-100">
-            <th className="border p-2">ID</th>
-            <th className="border p-2">Customer</th>
-            <th className="border p-2">Total</th>
-            <th className="border p-2">Status</th>
-            <th className="border p-2">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {orders.map((order) => (
-            <tr key={order.id} className="text-center">
-              <td className="border p-2">{order.id}</td>
-              <td className="border p-2">{order.customer}</td>
-              <td className="border p-2">{order.total}</td>
-              <td className="border p-2">{order.status}</td>
-              <td className="border p-2">
-                <button
-                  className="bg-yellow-500 text-white px-2 py-1 rounded mr-2"
-                  onClick={() => setEditingOrder(order)}
-                >
-                  Edit
-                </button>
-                <button
-                  className="bg-red-500 text-white px-2 py-1 rounded"
-                  onClick={() => deleteOrder(order.id)}
-                >
-                  Delete
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <Table className="bg-white p-4 shadow-md rounded-lg" dataSource={orders} columns={columns} rowKey="id" />
+      <Modal title="Order Form" open={isModalOpen} onOk={handleOk} onCancel={() => setIsModalOpen(false)}>
+        <Form form={form} layout="vertical">
+          <Form.Item name="userId" label="User ID" rules={[{ required: true }]}> <Input className="p-2 border rounded-md w-full" /> </Form.Item>
+          <Form.Item name="category" label="Category" rules={[{ required: true }]}> <Input className="p-2 border rounded-md w-full" /> </Form.Item>
+          <Form.Item name="status" label="Status" rules={[{ required: true }]}> 
+            <Select>
+              <Select.Option value="Pending">Pending</Select.Option>
+              <Select.Option value="Shipped">Shipped</Select.Option>
+              <Select.Option value="Delivered">Delivered</Select.Option>
+              <Select.Option value="Cancelled">Cancelled</Select.Option>
+            </Select>
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 };
 
-export default Orders;
+export default Order;
