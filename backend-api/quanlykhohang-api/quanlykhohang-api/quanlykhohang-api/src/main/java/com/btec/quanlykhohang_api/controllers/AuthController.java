@@ -58,18 +58,21 @@ public class AuthController {
         String email = loginRequest.get("email");
         String password = loginRequest.get("password");
 
-        // Find the user by email
+        // Tìm user theo email
         User user = userService.getUserByEmail(email);
         if (user == null || !passwordEncoder.matches(password, user.getPassword())) {
             return new ResponseEntity<>("Invalid email or password", HttpStatus.UNAUTHORIZED);
         }
 
-        // Generate JWT token
+        // Tạo JWT token
         String token = JwtUtil.generateToken(user.getEmail());
 
-        // Return the token
-        Map<String, String> response = new HashMap<>();
+        // Trả về token kèm role
+        Map<String, Object> response = new HashMap<>();
         response.put("token", token);
+        response.put("role", user.getRoles());  // Lấy role của user
+
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
+
 }
