@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Table, Button, Modal, Form, Input } from "antd";
+import { Table, Button, Modal, Form, Input, message, Popconfirm } from "antd";
 import axios from "axios";
 
 const Warehouse = () => {
@@ -14,36 +14,39 @@ const Warehouse = () => {
 
   const fetchWarehouses = async () => {
     try {
-      const response = await axios.get("http://localhost:8080/warehouses");
+      const response = await axios.get("http://localhost:8080/api/warehouses");
       setWarehouses(response.data);
     } catch (error) {
-      console.error("Error fetching warehouses", error);
+      message.error("Failed to fetch warehouses: " + error.message);
     }
   };
 
-  const handleOk = async () => {
+  const handleSave = async () => {
     try {
       const values = await form.validateFields();
       if (editingWarehouse) {
-        await axios.put(`http://localhost:8080/warehouses/${editingWarehouse.id}`, values);
+        await axios.put(`http://localhost:8080/api/warehouses/${editingWarehouse.id}`, values);
+        message.success("Warehouse updated successfully");
       } else {
-        await axios.post("http://localhost:8080/warehouses", values);
+        await axios.post("http://localhost:8080/api/warehouses", values);
+        message.success("Warehouse added successfully");
       }
       setIsModalOpen(false);
       form.resetFields();
       setEditingWarehouse(null);
       fetchWarehouses();
     } catch (error) {
-      console.error("Error saving warehouse", error);
+      message.error("Error saving warehouse: " + error.message);
     }
   };
 
   const handleDelete = async (id) => {
     try {
-      await axios.delete(`http://localhost:8080/warehouses/${id}`);
+      await axios.delete(`http://localhost:8080/api/warehouses/${id}`);
+      message.success("Warehouse deleted successfully");
       fetchWarehouses();
     } catch (error) {
-      console.error("Error deleting warehouse", error);
+      message.error("Error deleting warehouse: " + error.message);
     }
   };
 
@@ -55,15 +58,24 @@ const Warehouse = () => {
 
   const columns = [
     { title: "ID", dataIndex: "id", key: "id" },
+    { title: "Name", dataIndex: "name", key: "name" },
     { title: "Location", dataIndex: "location", key: "location" },
     { title: "Capacity", dataIndex: "capacity", key: "capacity" },
+    { title: "Manager", dataIndex: "manager", key: "manager" },
     {
       title: "Actions",
       key: "actions",
-      render: (text, record) => (
-        <div className="flex gap-2">
-          <Button className="bg-blue-500 text-white" onClick={() => handleEdit(record)}>Edit</Button>
-          <Button className="bg-red-500 text-white" onClick={() => handleDelete(record.id)}>Delete</Button>
+      render: (_, record) => (
+        <div style={{ display: "flex", gap: "10px" }}>
+          <Button type="primary" onClick={() => handleEdit(record)}>Edit</Button>
+          <Popconfirm
+            title="Are you sure to delete this warehouse?"
+            onConfirm={() => handleDelete(record.id)}
+            okText="Yes"
+            cancelText="No"
+          >
+            <Button type="danger">Delete</Button>
+          </Popconfirm>
         </div>
       ),
     },
@@ -73,18 +85,30 @@ const Warehouse = () => {
     <div className="p-6 bg-gray-100 min-h-screen">
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">Warehouse Management</h1>
-        <Button className="bg-green-500 text-white" onClick={() => setIsModalOpen(true)}>
+        <Button type="primary" className="bg-green-500" onClick={() => setIsModalOpen(true)}>
           Add Warehouse
         </Button>
       </div>
-      <Table className="bg-white p-4 shadow-md rounded-lg" dataSource={warehouses} columns={columns} rowKey="id" />
-      <Modal title="Warehouse Form" open={isModalOpen} onOk={handleOk} onCancel={() => setIsModalOpen(false)}>
+      <Table
+        dataSource={warehouses}
+        columns={columns}
+        rowKey="id"
+        pagination={false}
+        locale={{ emptyText: <div className="text-gray-500">No data</div> }}
+      />
+      <Modal title="Warehouse Form" open={isModalOpen} onOk={handleSave} onCancel={() => setIsModalOpen(false)}>
         <Form form={form} layout="vertical">
-          <Form.Item name="location" label="Location" rules={[{ required: true }]}>
-            <Input className="p-2 border rounded-md w-full" />
+          <Form.Item name="name" label="Warehouse Name" rules={[{ required: true, message: "Name is required" }]}> 
+            <Input />
           </Form.Item>
-          <Form.Item name="capacity" label="Capacity" rules={[{ required: true }]}>
-            <Input className="p-2 border rounded-md w-full" type="number" />
+          <Form.Item name="location" label="Location" rules={[{ required: true, message: "Location is required" }]}> 
+            <Input />
+          </Form.Item>
+          <Form.Item name="capacity" label="Capacity" rules={[{ required: true, message: "Capacity is required" }]}> 
+            <Input type="number" />
+          </Form.Item>
+          <Form.Item name="manager" label="Manager" rules={[{ required: true, message: "Manager is required" }]}> 
+            <Input />
           </Form.Item>
         </Form>
       </Modal>

@@ -1,116 +1,121 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import { Table, Button, Modal, Form, Input, Select } from "antd";
 
-const Products = () => {
-  const [products, setProducts] = useState([
-    { id: 1, name: "Laptop", price: "$1000", stock: 10, image: "https://via.placeholder.com/150" },
-    { id: 2, name: "Smartphone", price: "$500", stock: 20, image: "https://via.placeholder.com/150" },
-    { id: 3, name: "Headphones", price: "$100", stock: 30, image: "https://via.placeholder.com/150" },
-  ]);
+const ProductManagement = () => {
+    const [products, setProducts] = useState([]);
+    const [suppliers, setSuppliers] = useState([]);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingProduct, setEditingProduct] = useState(null);
+    const [form] = Form.useForm();
 
-  const [newProduct, setNewProduct] = useState({ name: "", price: "", stock: "", image: "" });
-  const [editingProduct, setEditingProduct] = useState(null);
+    useEffect(() => {
+        fetchProducts();
+        fetchSuppliers();
+    }, []);
 
-  const addProduct = () => {
-    if (!newProduct.name || !newProduct.price || !newProduct.stock || !newProduct.image) return;
-    setProducts([...products, { id: products.length + 1, ...newProduct }]);
-    setNewProduct({ name: "", price: "", stock: "", image: "" });
-  };
+    const fetchProducts = async () => {
+        try {
+            const response = await axios.get("http://localhost:8080/api/products");
+            setProducts(response.data);
+        } catch (error) {
+            console.error("Error fetching products:", error);
+        }
+    };
 
-  const updateProduct = () => {
-    setProducts(products.map((product) => (product.id === editingProduct.id ? editingProduct : product)));
-    setEditingProduct(null);
-  };
+    const fetchSuppliers = async () => {
+    try {
+        const response = await axios.get("http://localhost:8080/api/suppliers");
+        console.log("Suppliers data:", response.data);
+        setSuppliers(response.data);
+    } catch (error) {
+        console.error("Error fetching suppliers:", error);
+    }
+};
+    const handleAdd = () => {
+        setEditingProduct(null);
+        form.resetFields();
+        setIsModalOpen(true);
+    };
 
-  const deleteProduct = (id) => {
-    setProducts(products.filter((product) => product.id !== id));
-  };
+    const handleEdit = (product) => {
+        setEditingProduct(product);
+        form.setFieldsValue(product);
+        setIsModalOpen(true);
+    };
 
-  return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Products Management</h1>
+    const handleDelete = async (id) => {
+        try {
+            await axios.delete(`http://localhost:8080/api/products/${id}`);
+            fetchProducts();
+        } catch (error) {
+            console.error("Error deleting product:", error);
+        }
+    };
 
-      {/* Form thêm/sửa sản phẩm */}
-      <div className="mb-4 flex flex-wrap gap-2">
-        <input
-          type="text"
-          placeholder="Product Name"
-          className="border p-2 rounded w-1/5"
-          value={editingProduct ? editingProduct.name : newProduct.name}
-          onChange={(e) =>
-            editingProduct
-              ? setEditingProduct({ ...editingProduct, name: e.target.value })
-              : setNewProduct({ ...newProduct, name: e.target.value })
-          }
-        />
-        <input
-          type="text"
-          placeholder="Price"
-          className="border p-2 rounded w-1/5"
-          value={editingProduct ? editingProduct.price : newProduct.price}
-          onChange={(e) =>
-            editingProduct
-              ? setEditingProduct({ ...editingProduct, price: e.target.value })
-              : setNewProduct({ ...newProduct, price: e.target.value })
-          }
-        />
-        <input
-          type="text"
-          placeholder="Stock"
-          className="border p-2 rounded w-1/5"
-          value={editingProduct ? editingProduct.stock : newProduct.stock}
-          onChange={(e) =>
-            editingProduct
-              ? setEditingProduct({ ...editingProduct, stock: e.target.value })
-              : setNewProduct({ ...newProduct, stock: e.target.value })
-          }
-        />
-        <input
-          type="text"
-          placeholder="Image URL"
-          className="border p-2 rounded w-1/5"
-          value={editingProduct ? editingProduct.image : newProduct.image}
-          onChange={(e) =>
-            editingProduct
-              ? setEditingProduct({ ...editingProduct, image: e.target.value })
-              : setNewProduct({ ...newProduct, image: e.target.value })
-          }
-        />
-        {editingProduct ? (
-          <button className="bg-blue-500 text-white px-4 py-2 rounded" onClick={updateProduct}>
-            Update
-          </button>
-        ) : (
-          <button className="bg-green-500 text-white px-4 py-2 rounded" onClick={addProduct}>
-            Add
-          </button>
-        )}
-      </div>
+    const handleSave = async (values) => {
+        try {
+            if (editingProduct) {
+                await axios.put(`http://localhost:8080/api/products/${editingProduct.id}`, values);
+            } else {
+                await axios.post("http://localhost:8080/api/products", values);
+            }
+            setIsModalOpen(false);
+            fetchProducts();
+        } catch (error) {
+            console.error("Error saving product:", error);
+        }
+    };
 
-      {/* Danh sách sản phẩm */}
-      <div className="grid grid-cols-3 gap-4">
-        {products.map((product) => (
-          <div key={product.id} className="bg-white p-4 rounded-lg shadow-md text-center">
-            <img src={product.image} alt={product.name} className="w-full h-40 object-cover rounded-md" />
-            <h2 className="text-lg font-semibold mt-2">{product.name}</h2>
-            <p className="text-gray-600">{product.price}</p>
-            <p className="text-gray-500">Stock: {product.stock}</p>
-            <button
-              className="mt-2 bg-yellow-500 text-white px-4 py-2 rounded"
-              onClick={() => setEditingProduct(product)}
-            >
-              Edit
-            </button>
-            <button
-              className="mt-2 bg-red-500 text-white px-4 py-2 rounded ml-2"
-              onClick={() => deleteProduct(product.id)}
-            >
-              Delete
-            </button>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+    const columns = [
+        { title: "Name", dataIndex: "name", key: "name" },
+        { title: "Category", dataIndex: "category", key: "category" },
+        { title: "Quantity", dataIndex: "quantity", key: "quantity" },
+        { title: "Price", dataIndex: "price", key: "price" },
+        { title: "Supplier", dataIndex: "supplierId", key: "supplierId", render: (id) => suppliers.find(s => s.id === id)?.name || "Unknown" },
+        {
+            title: "Actions",
+            key: "actions",
+            render: (_, record) => (
+                <>
+                    <Button onClick={() => handleEdit(record)} style={{ marginRight: 8 }}>Edit</Button>
+                    <Button danger onClick={() => handleDelete(record.id)}>Delete</Button>
+                </>
+            ),
+        },
+    ];
+
+    return (
+        <div>
+            <h2>Product Management</h2>
+            <Button type="primary" onClick={handleAdd} style={{ marginBottom: 16 }}>Add Product</Button>
+            <Table dataSource={products} columns={columns} rowKey="id" />
+            
+            <Modal title={editingProduct ? "Edit Product" : "Add Product"} open={isModalOpen} onCancel={() => setIsModalOpen(false)} onOk={() => form.submit()}>
+                <Form form={form} onFinish={handleSave} layout="vertical">
+                    <Form.Item name="name" label="Product Name" rules={[{ required: true, message: "Please enter product name" }]}>
+                        <Input />
+                    </Form.Item>
+                    <Form.Item name="category" label="Category" rules={[{ required: true, message: "Please enter category" }]}>
+                        <Input />
+                    </Form.Item>
+                    <Form.Item name="quantity" label="Quantity" rules={[{ required: true, message: "Please enter quantity" }]}>
+                        <Input type="number" />
+                    </Form.Item>
+                    <Form.Item name="price" label="Price" rules={[{ required: true, message: "Please enter price" }]}>
+                        <Input type="number" step="0.01" />
+                    </Form.Item>
+                    <Form.Item name="supplierId" label="Supplier" rules={[{ required: true, message: "Please select a supplier" }]}>
+                        <Select>
+                            {suppliers.map(supplier => (
+                                <Select.Option key={supplier.id} value={supplier.id}>{supplier.name}</Select.Option>
+                            ))}
+                        </Select>
+                    </Form.Item>
+                </Form>
+            </Modal>
+        </div>
+    );
 };
 
-export default Products;
+export default ProductManagement;
