@@ -13,9 +13,8 @@ import org.springframework.data.mongodb.core.mapping.Document;
 public class Warehouse {
 
     @Id
-    private String id;  // MongoDB automatically assigns an ObjectId
-
+    private String id;
+    private String name;
     private String location;
-
     private int capacity;
 }
