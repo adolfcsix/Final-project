@@ -90,19 +90,19 @@ export default function ProductManagement() {
       <h1 className="text-2xl font-bold mb-4">Product Management</h1>
       <div className="mb-4 flex justify-between">
         <Input placeholder="Search product..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-1/3" />
-        <Button className="bg-green-500 text-white" onClick={() => setIsModalOpen(true)}>Add Product</Button>
+        <Button className="bg-green-500 text-white" onClick={() => { setIsModalOpen(true); form.resetFields(); }}>Add Product</Button>
       </div>
       <Table className="bg-white p-4 shadow-md rounded-lg" dataSource={products.filter(p => p.name.toLowerCase().includes(search.toLowerCase()))} columns={columns} rowKey="id" />
       <Modal title="Product Form" open={isModalOpen} onOk={handleSubmit} onCancel={() => setIsModalOpen(false)}>
-        <Form form={form} layout="vertical">
-          <Form.Item name="name" label="Name" rules={[{ required: true }]}> <Input /> </Form.Item>
-          <Form.Item name="category" label="Category" rules={[{ required: true }]}> <Input /> </Form.Item>
-          <Form.Item name="quantity" label="Quantity" rules={[{ required: true }]}> <Input type="number" /> </Form.Item>
-          <Form.Item name="price" label="Price" rules={[{ required: true }]}> <Input type="number" /> </Form.Item>
-          <Form.Item name="supplierId" label="Supplier" rules={[{ required: true }]}> 
+        <Form form={form} layout="vertical" initialValues={{ name: '', category: '', quantity: '', price: '' }}>
+          <Form.Item name="name" label="Name" rules={[{ required: true, message: "Please enter the product name" }]}> <Input /> </Form.Item>
+          <Form.Item name="category" label="Category" rules={[{ required: true, message: "Please enter a category" }]}> <Input /> </Form.Item>
+          <Form.Item name="quantity" label="Quantity" rules={[{ required: true, type: "number", message: "Please enter a valid quantity" }]}> <Input type="number" /> </Form.Item>
+          <Form.Item name="price" label="Price" rules={[{ required: true, type: "number", message: "Please enter a valid price" }]}> <Input type="number" /> </Form.Item>
+          <Form.Item name="supplierId" label="Supplier" rules={[{ required: true, message: "Please select a supplier" }]}> 
             <Select placeholder="Select Supplier">{suppliers.map(s => <Select.Option key={s.id} value={s.id}>{s.name}</Select.Option>)}</Select>
           </Form.Item>
-          <Form.Item name="warehouseId" label="Warehouse" rules={[{ required: true }]}> 
+          <Form.Item name="warehouseId" label="Warehouse" rules={[{ required: true, message: "Please select a warehouse" }]}> 
             <Select placeholder="Select Warehouse">{warehouses.map(w => <Select.Option key={w.id} value={w.id}>{w.name}</Select.Option>)}</Select>
           </Form.Item>
           <Form.Item name="description" label="Description"> <Input.TextArea rows={4} /> </Form.Item>
