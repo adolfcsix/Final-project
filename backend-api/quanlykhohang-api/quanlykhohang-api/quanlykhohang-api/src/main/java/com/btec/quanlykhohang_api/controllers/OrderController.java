@@ -19,43 +19,26 @@ public class OrderController {
     @Autowired
     private OrderService orderService;
 
-    // Get all orders
     @GetMapping
     public List<Order> getAllOrders() {
         return orderService.getAllOrders();
     }
 
-    // Get order by ID
     @GetMapping("/{id}")
     public Optional<Order> getOrderById(@PathVariable String id) {
         return orderService.getOrderById(id);
     }
 
-    // Get orders by user ID
-    @GetMapping("/user/{userId}")
-    public List<Order> getOrdersByUserId(@PathVariable String userId) {
-        return orderService.getOrdersByUserId(userId);
-    }
-
-    // Get orders by status
-    @GetMapping("/status/{status}")
-    public List<Order> getOrdersByStatus(@PathVariable String status) {
-        return orderService.getOrdersByStatus(status);
-    }
-
-    // Create a new order
     @PostMapping
     public Order createOrder(@RequestBody Order order) {
         return orderService.createOrder(order);
     }
 
-    // Update an order
     @PutMapping("/{id}")
-    public Order updateOrder(@PathVariable String id, @RequestBody Order order) {
-        return orderService.updateOrder(id, order);
+    public Order updateOrder(@PathVariable String id, @RequestBody Order updatedOrder) {
+        return orderService.updateOrder(id, updatedOrder);
     }
 
-    // Delete an order
     @DeleteMapping("/{id}")
     public void deleteOrder(@PathVariable String id) {
         orderService.deleteOrder(id);

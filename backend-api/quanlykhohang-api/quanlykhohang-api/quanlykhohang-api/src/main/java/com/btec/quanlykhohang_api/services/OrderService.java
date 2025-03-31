@@ -21,44 +21,33 @@ public class OrderService {
     @Autowired
     private OrderRepository orderRepository;
 
-    // Get all orders
     public List<Order> getAllOrders() {
         return orderRepository.findAll();
     }
 
-    // Get order by ID
     public Optional<Order> getOrderById(String id) {
         return orderRepository.findById(id);
     }
 
-    // Get orders by user ID
-    public List<Order> getOrdersByUserId(String userId) {
-        return orderRepository.findByUserId(userId);
-    }
-
-    // Get orders by status
-    public List<Order> getOrdersByStatus(String status) {
-        return orderRepository.findByStatus(status);
-    }
-
-    // Create a new order
     public Order createOrder(Order order) {
-        order.setOrderDate(LocalDateTime.now()); // Set order date to now
+        order.setOrderDate(java.time.Instant.now());
         return orderRepository.save(order);
     }
 
-    // Update an existing order
     public Order updateOrder(String id, Order updatedOrder) {
         return orderRepository.findById(id).map(order -> {
-            order.setUserId(updatedOrder.getUserId());
-            order.setCategory(updatedOrder.getCategory());
-            order.setOrderDate(updatedOrder.getOrderDate());
+            order.setOrderType(updatedOrder.getOrderType());
+            order.setProductId(updatedOrder.getProductId());
+            order.setSupplierId(updatedOrder.getSupplierId());
+            order.setWarehouseId(updatedOrder.getWarehouseId());
+            order.setQuantity(updatedOrder.getQuantity());
+            order.setTotalPrice(updatedOrder.getTotalPrice());
             order.setStatus(updatedOrder.getStatus());
+            order.setOrderedBy(updatedOrder.getOrderedBy());
             return orderRepository.save(order);
-        }).orElseThrow(() -> new RuntimeException("Order not found with id " + id));
+        }).orElseThrow(() -> new RuntimeException("Order not found"));
     }
 
-    // Delete an order by ID
     public void deleteOrder(String id) {
         orderRepository.deleteById(id);
     }

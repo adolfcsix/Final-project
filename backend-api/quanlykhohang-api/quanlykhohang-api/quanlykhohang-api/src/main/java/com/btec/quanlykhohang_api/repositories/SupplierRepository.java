@@ -5,9 +5,9 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface SupplierRepository extends MongoRepository<Supplier, String> {
-
-    List<Supplier> findByCategory(String category); // Custom query to find suppliers by category
+    Optional<Supplier> findByName(String name);
 }

@@ -1,5 +1,6 @@
 package com.btec.quanlykhohang_api.entities;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -19,13 +20,14 @@ import java.util.List;
 public class Order {
 
     @Id
-    private String id;  // MongoDB automatically assigns an ObjectId
-
-    private String userId;  // Reference to a user (customer)
-
-    private String category;
-
-    private LocalDateTime orderDate;
-
-    private String status; // Example values: "Pending", "Shipped", "Delivered", "Cancelled"
+    private String id;
+    private String orderType; // purchase | sale
+    private String productId;
+    private String supplierId;
+    private String warehouseId;
+    private int quantity;
+    private double totalPrice;
+    private String status;  // pending | completed | canceled
+    private String orderedBy;
+    private Instant orderDate;
 }
