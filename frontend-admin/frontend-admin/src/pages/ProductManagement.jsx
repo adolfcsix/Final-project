@@ -1,174 +1,224 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
-import { message } from "antd";
-import { Table, Button, Modal, Form, Input, Select, Upload, Radio, Spin } from "antd";
-import { UploadOutlined } from "@ant-design/icons";
+// src/components/ProductManagement.jsx
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 
-export default function ProductManagement() {
-  const [products, setProducts] = useState([]);
-  const [suppliers, setSuppliers] = useState([]);
-  const [warehouses, setWarehouses] = useState([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [form] = Form.useForm();
-  const [editingProduct, setEditingProduct] = useState(null);
-  const [search, setSearch] = useState("");
-  const [uploadMethod, setUploadMethod] = useState("upload");
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      const [productRes, supplierRes, warehouseRes] = await Promise.all([
-        axios.get("http://localhost:8080/api/products"),
-        axios.get("http://localhost:8080/api/suppliers"),
-        axios.get("http://localhost:8080/api/warehouses"),
-      ]);
-      setProducts(productRes.data);
-      setSuppliers(supplierRes.data);
-      setWarehouses(warehouseRes.data);
-    } catch (error) {
-      message.error("Error fetching data. Please try again.");
-      console.error("Error fetching data:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSubmit = async () => {
-    try {
-      setLoading(true);
-      const values = await form.validateFields();
-      console.log("Form values before sending:", values);
-
-      const formattedValues = {
-        ...values,
-        stockquantity: parseInt(values.stockquantity, 10),
-        price: parseFloat(values.price),
-      };
-
-      console.log("Formatted values before sending:", formattedValues);
-
-      await axios.post("http://localhost:8080/api/products", formattedValues);
-      message.success("Product added successfully!");
-      fetchData();
-      form.resetFields();
-      setIsModalOpen(false);
-    } catch (error) {
-      console.error("Error submitting form:", error);
-      if (error.errorFields) {
-        message.error("Please correct the highlighted fields.");
-      } else {
-        message.error("Error adding product. Please try again.");
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-  
-
-  const handleDelete = async (id) => {
-    try {
-      await axios.delete(`http://localhost:8080/api/products/${id}`);
-      fetchData();
-    } catch (error) {
-      console.error("Error deleting product", error);
-      message.error("Error deleting product. Please try again.");
-    }
-  };
-
-  const handleEdit = (record) => {
-    setEditingProduct(record);
-    form.setFieldsValue({
-      ...record,
-      quantity: Number(record.quantity),
-      price: Number(record.price),
+const ProductManagement = () => {
+    const [products, setProducts] = useState([]);
+    const [suppliers, setSuppliers] = useState([]);
+    const [warehouses, setWarehouses] = useState([]);
+    const [formData, setFormData] = useState({
+        name: '',
+        category: '',
+        price: '',
+        stockQuantity: '',
+        supplierId: '',
+        warehouseId: '',
+        image: '',
     });
-    setIsModalOpen(true);
-  };
 
-  const columns = [
-    { title: "Name", dataIndex: "name", key: "name" },
-    { title: "Category", dataIndex: "category", key: "category" },
-    { title: "StockQuantity", dataIndex: "stockQuantity", key: "stockQuantity" },
-    { title: "Price", dataIndex: "price", key: "price" },
-    { title: "Supplier", dataIndex: "supplierName", key: "supplierName" },
-    { title: "Warehouse", dataIndex: "warehouseName", key: "warehouseName" },
-    { title: "Description", dataIndex: "description", key: "description" },
-    { title: "Image", dataIndex: "image", key: "image", render: (text) => text ? <img src={text} alt="Product" width={50} /> : "No Image" },
-    {
-      title: "Actions",
-      key: "actions",
-      render: (text, record) => (
-        <div className="flex gap-2">
-          <Button className="bg-blue-500 text-white" onClick={() => handleEdit(record)}>Edit</Button>
-          <Button className="bg-red-500 text-white" onClick={() => handleDelete(record.id)}>Delete</Button>
+    // Fetch products, suppliers, and warehouses
+    useEffect(() => {
+        // Fetch products
+        axios.get('http://localhost:8080/api/products')
+            .then(response => {
+                setProducts(response.data);
+            })
+            .catch(error => console.error('Error fetching products!', error));
+
+        // Fetch suppliers
+        axios.get('http://localhost:8080/api/suppliers')
+            .then(response => {
+                setSuppliers(response.data);
+            })
+            .catch(error => console.error('Error fetching suppliers!', error));
+
+        // Fetch warehouses
+        axios.get('http://localhost:8080/api/warehouses')
+            .then(response => {
+                setWarehouses(response.data);
+            })
+            .catch(error => console.error('Error fetching warehouses!', error));
+    }, []);
+
+    // Handle form input changes
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setFormData({ ...formData, [name]: value });
+    };
+
+    // Handle form submission to add or update a product
+    const handleSubmit = (e) => {
+        e.preventDefault();
+
+        const productData = { ...formData };
+
+        if (formData.id) {
+            axios.put(`http://localhost:8080/api/products/${formData.id}`, productData)
+                .then(response => {
+                    alert('Product updated successfully!');
+                    setProducts(products.map(product => (product.id === formData.id ? response.data : product)));
+                    setFormData({
+                        name: '',
+                        category: '',
+                        price: '',
+                        stockQuantity: '',
+                        supplierId: '',
+                        warehouseId: '',
+                        image: '',
+                    });
+                })
+                .catch(error => console.error('Error updating product!', error));
+        } else {
+            axios.post('http://localhost:8080/api/products', productData)
+                .then(response => {
+                    alert('Product added successfully!');
+                    setProducts([...products, response.data]);
+                    setFormData({
+                        name: '',
+                        category: '',
+                        price: '',
+                        stockQuantity: '',
+                        supplierId: '',
+                        warehouseId: '',
+                        image: '',
+                    });
+                })
+                .catch(error => console.error('Error adding product!', error));
+        }
+    };
+
+    // Handle editing a product
+    const handleEdit = (product) => {
+        setFormData(product);
+    };
+
+    return (
+        <div className="max-w-6xl mx-auto p-6">
+            <h1 className="text-2xl font-bold text-center mb-6">Product Management</h1>
+
+            {/* Form for adding and editing products */}
+            <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow-md mb-8 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input
+                        type="text"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleInputChange}
+                        placeholder="Product Name"
+                        className="p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                    />
+                    <input
+                        type="text"
+                        name="category"
+                        value={formData.category}
+                        onChange={handleInputChange}
+                        placeholder="Category"
+                        className="p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                    />
+                    <input
+                        type="number"
+                        name="price"
+                        value={formData.price}
+                        onChange={handleInputChange}
+                        placeholder="Price"
+                        className="p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                    />
+                    <input
+                        type="number"
+                        name="stockQuantity"
+                        value={formData.stockQuantity}
+                        onChange={handleInputChange}
+                        placeholder="Stock Quantity"
+                        className="p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                    />
+                    
+                    {/* Supplier Dropdown */}
+                    <select
+                        name="supplierId"
+                        value={formData.supplierId}
+                        onChange={handleInputChange}
+                        className="p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                    >
+                        <option value="">Select Supplier</option>
+                        {suppliers.map(supplier => (
+                            <option key={supplier.id} value={supplier.id}>
+                                {supplier.name}
+                            </option>
+                        ))}
+                    </select>
+
+                    {/* Warehouse Dropdown */}
+                    <select
+                        name="warehouseId"
+                        value={formData.warehouseId}
+                        onChange={handleInputChange}
+                        className="p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                    >
+                        <option value="">Select Warehouse</option>
+                        {warehouses.map(warehouse => (
+                            <option key={warehouse.id} value={warehouse.id}>
+                                {warehouse.name}
+                            </option>
+                        ))}
+                    </select>
+
+                    <input
+                        type="text"
+                        name="image"
+                        value={formData.image}
+                        onChange={handleInputChange}
+                        placeholder="Image URL"
+                        className="p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                </div>
+                <button type="submit" className="w-full py-3 bg-blue-500 text-white font-semibold rounded-md hover:bg-blue-600">
+                    {formData.id ? 'Update Product' : 'Add Product'}
+                </button>
+            </form>
+
+            {/* Product List Table */}
+            <h2 className="text-xl font-semibold mb-4">Product List</h2>
+            <table className="w-full table-auto border-collapse border border-gray-300">
+                <thead>
+                    <tr className="bg-gray-100">
+                        <th className="p-3 text-left">Name</th>
+                        <th className="p-3 text-left">Category</th>
+                        <th className="p-3 text-left">Price</th>
+                        <th className="p-3 text-left">Stock Quantity</th>
+                        <th className="p-3 text-left">Supplier</th>
+                        <th className="p-3 text-left">Warehouse</th>
+                        <th className="p-3 text-left">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {products.map(product => (
+                        <tr key={product.id} className="border-t border-gray-200">
+                            <td className="p-3">{product.name}</td>
+                            <td className="p-3">{product.category}</td>
+                            <td className="p-3">{product.price}</td>
+                            <td className="p-3">{product.stockQuantity}</td>
+                            <td className="p-3">{suppliers.find(supplier => supplier.id === product.supplierId)?.name}</td>
+                            <td className="p-3">{warehouses.find(warehouse => warehouse.id === product.warehouseId)?.name}</td>
+                            <td className="p-3">
+                                <button
+                                    onClick={() => handleEdit(product)}
+                                    className="text-blue-500 hover:text-blue-700"
+                                >
+                                    Edit
+                                </button>
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
         </div>
-      ),
-    },
-  ];
+    );
+};
 
-  return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Product Management</h1>
-      <div className="mb-4 flex justify-between">
-        <Input
-          placeholder="Search product..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-1/3"
-        />
-        <Button className="bg-green-500 text-white" onClick={() => { setIsModalOpen(true); form.resetFields(); }}>Add Product</Button>
-      </div>
-      {loading ? (
-        <Spin size="large" tip="Loading..." />
-      ) : (
-        <Table
-          className="bg-white p-4 shadow-md rounded-lg"
-          dataSource={products.filter(p => p.name.toLowerCase().includes(search.toLowerCase()))}
-          columns={columns}
-          rowKey="id"
-        />
-      )}
-    
-      <Modal title="Product Form" open={isModalOpen} onOk={handleSubmit} onCancel={() => setIsModalOpen(false)} confirmLoading={loading}>
-        <Form form={form} layout="vertical" initialValues={{ name: '', category: '', quantity: '', price: '' }}>
-          <Form.Item name="name" label="Name" rules={[{ required: true, message: "Please enter the product name" }]}> <Input /> </Form.Item>
-          <Form.Item name="category" label="Category" rules={[{ required: true, message: "Please enter a category" }]}> <Input /> </Form.Item>
-          <Form.Item name="stockQuantity" label="StockQuantity" rules={[{ required: true, message: "Please enter a valid stockquantity" }]}> <Input type="number" /> </Form.Item>
-          <Form.Item name="price" label="Price" rules={[{ required: true, message: "Please enter a valid price" }]}> <Input type="number" /> </Form.Item>
-          <Form.Item name="supplierId" label="Supplier" rules={[{ required: true, message: "Please select a supplier" }]}>
-            <Select placeholder="Select Supplier">
-              {suppliers.map(s => <Select.Option key={s.id} value={s.id}>{s.name}</Select.Option>)}
-            </Select>
-          </Form.Item>
-          <Form.Item name="warehouseId" label="Warehouse" rules={[{ required: true, message: "Please select a warehouse" }]}>
-            <Select placeholder="Select Warehouse">
-              {warehouses.map(w => <Select.Option key={w.id} value={w.id}>{w.name}</Select.Option>)}
-            </Select>
-          </Form.Item>
-          <Form.Item label="Image Upload Method">
-            <Radio.Group value={uploadMethod} onChange={(e) => setUploadMethod(e.target.value)}>
-              <Radio value="upload">Upload File</Radio>
-              <Radio value="url">Image URL</Radio>
-            </Radio.Group>
-          </Form.Item>
-          {uploadMethod === "upload" ? (
-            <Form.Item name="image" label="Product Image">
-              <Upload beforeUpload={() => false} listType="picture">
-                <Button icon={<UploadOutlined />}>Upload</Button>
-              </Upload>
-            </Form.Item>
-          ) : (
-            <Form.Item name="image" label="Image URL" rules={[{ type: "url", message: "Enter a valid URL" }]}>
-              <Input placeholder="Enter Image URL" />
-            </Form.Item>
-          )}
-        </Form>
-      </Modal>
-    </div>
-  );
-}
+export default ProductManagement;
