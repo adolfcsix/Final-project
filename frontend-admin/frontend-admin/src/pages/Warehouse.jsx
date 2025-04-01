@@ -61,7 +61,6 @@ const Warehouse = () => {
     { title: "Name", dataIndex: "name", key: "name" },
     { title: "Location", dataIndex: "location", key: "location" },
     { title: "Capacity", dataIndex: "capacity", key: "capacity" },
-    { title: "Manager", dataIndex: "manager", key: "manager" },
     {
       title: "Actions",
       key: "actions",
@@ -106,9 +105,6 @@ const Warehouse = () => {
           </Form.Item>
           <Form.Item name="capacity" label="Capacity" rules={[{ required: true, message: "Capacity is required" }]}> 
             <Input type="number" />
-          </Form.Item>
-          <Form.Item name="manager" label="Manager" rules={[{ required: true, message: "Manager is required" }]}> 
-            <Input />
           </Form.Item>
         </Form>
       </Modal>

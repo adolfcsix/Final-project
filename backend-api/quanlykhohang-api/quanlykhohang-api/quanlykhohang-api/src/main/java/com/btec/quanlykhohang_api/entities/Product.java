@@ -33,6 +33,5 @@ public class Product {
     private int stockQuantity;
     private String supplierId;  // Liên kết với Supplier
     private String warehouseId; // Liên kết với Warehouse
-    private String imageUrl;   // Lưu URL nếu người dùng nhập URL
-    private String imageBase64; // Lưu Base64 nếu người dùng upload ảnh từ máy
+    private String image;   // Lưu URL nếu người dùng nhập URL
 }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { Table, Button, Modal, Form, Input, Select, Upload, Radio } from "antd";
+import { message } from "antd";
+import { Table, Button, Modal, Form, Input, Select, Upload, Radio, Spin } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
 
 export default function ProductManagement() {
@@ -12,6 +13,7 @@ export default function ProductManagement() {
   const [editingProduct, setEditingProduct] = useState(null);
   const [search, setSearch] = useState("");
   const [uploadMethod, setUploadMethod] = useState("upload");
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -19,6 +21,7 @@ export default function ProductManagement() {
 
   const fetchData = async () => {
     try {
+      setLoading(true);
       const [productRes, supplierRes, warehouseRes] = await Promise.all([
         axios.get("http://localhost:8080/api/products"),
         axios.get("http://localhost:8080/api/suppliers"),
@@ -28,26 +31,44 @@ export default function ProductManagement() {
       setSuppliers(supplierRes.data);
       setWarehouses(warehouseRes.data);
     } catch (error) {
+      message.error("Error fetching data. Please try again.");
       console.error("Error fetching data:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleSubmit = async () => {
     try {
+      setLoading(true);
       const values = await form.validateFields();
-      if (editingProduct) {
-        await axios.put(`http://localhost:8080/api/products/${editingProduct.id}`, values);
-      } else {
-        await axios.post("http://localhost:8080/api/products", values);
-      }
-      setIsModalOpen(false);
-      form.resetFields();
-      setEditingProduct(null);
+      console.log("Form values before sending:", values);
+
+      const formattedValues = {
+        ...values,
+        stockquantity: parseInt(values.stockquantity, 10),
+        price: parseFloat(values.price),
+      };
+
+      console.log("Formatted values before sending:", formattedValues);
+
+      await axios.post("http://localhost:8080/api/products", formattedValues);
+      message.success("Product added successfully!");
       fetchData();
+      form.resetFields();
+      setIsModalOpen(false);
     } catch (error) {
-      console.error("Error saving product", error);
+      console.error("Error submitting form:", error);
+      if (error.errorFields) {
+        message.error("Please correct the highlighted fields.");
+      } else {
+        message.error("Error adding product. Please try again.");
+      }
+    } finally {
+      setLoading(false);
     }
   };
+  
 
   const handleDelete = async (id) => {
     try {
@@ -55,19 +76,24 @@ export default function ProductManagement() {
       fetchData();
     } catch (error) {
       console.error("Error deleting product", error);
+      message.error("Error deleting product. Please try again.");
     }
   };
 
   const handleEdit = (record) => {
     setEditingProduct(record);
-    form.setFieldsValue(record);
+    form.setFieldsValue({
+      ...record,
+      quantity: Number(record.quantity),
+      price: Number(record.price),
+    });
     setIsModalOpen(true);
   };
 
   const columns = [
     { title: "Name", dataIndex: "name", key: "name" },
     { title: "Category", dataIndex: "category", key: "category" },
-    { title: "Quantity", dataIndex: "quantity", key: "quantity" },
+    { title: "StockQuantity", dataIndex: "stockQuantity", key: "stockQuantity" },
     { title: "Price", dataIndex: "price", key: "price" },
     { title: "Supplier", dataIndex: "supplierName", key: "supplierName" },
     { title: "Warehouse", dataIndex: "warehouseName", key: "warehouseName" },
@@ -89,23 +115,41 @@ export default function ProductManagement() {
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-4">Product Management</h1>
       <div className="mb-4 flex justify-between">
-        <Input placeholder="Search product..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-1/3" />
+        <Input
+          placeholder="Search product..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-1/3"
+        />
         <Button className="bg-green-500 text-white" onClick={() => { setIsModalOpen(true); form.resetFields(); }}>Add Product</Button>
       </div>
-      <Table className="bg-white p-4 shadow-md rounded-lg" dataSource={products.filter(p => p.name.toLowerCase().includes(search.toLowerCase()))} columns={columns} rowKey="id" />
-      <Modal title="Product Form" open={isModalOpen} onOk={handleSubmit} onCancel={() => setIsModalOpen(false)}>
+      {loading ? (
+        <Spin size="large" tip="Loading..." />
+      ) : (
+        <Table
+          className="bg-white p-4 shadow-md rounded-lg"
+          dataSource={products.filter(p => p.name.toLowerCase().includes(search.toLowerCase()))}
+          columns={columns}
+          rowKey="id"
+        />
+      )}
+    
+      <Modal title="Product Form" open={isModalOpen} onOk={handleSubmit} onCancel={() => setIsModalOpen(false)} confirmLoading={loading}>
         <Form form={form} layout="vertical" initialValues={{ name: '', category: '', quantity: '', price: '' }}>
           <Form.Item name="name" label="Name" rules={[{ required: true, message: "Please enter the product name" }]}> <Input /> </Form.Item>
           <Form.Item name="category" label="Category" rules={[{ required: true, message: "Please enter a category" }]}> <Input /> </Form.Item>
-          <Form.Item name="quantity" label="Quantity" rules={[{ required: true, type: "number", message: "Please enter a valid quantity" }]}> <Input type="number" /> </Form.Item>
-          <Form.Item name="price" label="Price" rules={[{ required: true, type: "number", message: "Please enter a valid price" }]}> <Input type="number" /> </Form.Item>
-          <Form.Item name="supplierId" label="Supplier" rules={[{ required: true, message: "Please select a supplier" }]}> 
-            <Select placeholder="Select Supplier">{suppliers.map(s => <Select.Option key={s.id} value={s.id}>{s.name}</Select.Option>)}</Select>
+          <Form.Item name="stockQuantity" label="StockQuantity" rules={[{ required: true, message: "Please enter a valid stockquantity" }]}> <Input type="number" /> </Form.Item>
+          <Form.Item name="price" label="Price" rules={[{ required: true, message: "Please enter a valid price" }]}> <Input type="number" /> </Form.Item>
+          <Form.Item name="supplierId" label="Supplier" rules={[{ required: true, message: "Please select a supplier" }]}>
+            <Select placeholder="Select Supplier">
+              {suppliers.map(s => <Select.Option key={s.id} value={s.id}>{s.name}</Select.Option>)}
+            </Select>
           </Form.Item>
-          <Form.Item name="warehouseId" label="Warehouse" rules={[{ required: true, message: "Please select a warehouse" }]}> 
-            <Select placeholder="Select Warehouse">{warehouses.map(w => <Select.Option key={w.id} value={w.id}>{w.name}</Select.Option>)}</Select>
+          <Form.Item name="warehouseId" label="Warehouse" rules={[{ required: true, message: "Please select a warehouse" }]}>
+            <Select placeholder="Select Warehouse">
+              {warehouses.map(w => <Select.Option key={w.id} value={w.id}>{w.name}</Select.Option>)}
+            </Select>
           </Form.Item>
-          <Form.Item name="description" label="Description"> <Input.TextArea rows={4} /> </Form.Item>
           <Form.Item label="Image Upload Method">
             <Radio.Group value={uploadMethod} onChange={(e) => setUploadMethod(e.target.value)}>
               <Radio value="upload">Upload File</Radio>
@@ -119,7 +163,7 @@ export default function ProductManagement() {
               </Upload>
             </Form.Item>
           ) : (
-            <Form.Item name="image" label="Image URL" rules={[{ type: "url", message: "Enter a valid URL" }]}> 
+            <Form.Item name="image" label="Image URL" rules={[{ type: "url", message: "Enter a valid URL" }]}>
               <Input placeholder="Enter Image URL" />
             </Form.Item>
           )}

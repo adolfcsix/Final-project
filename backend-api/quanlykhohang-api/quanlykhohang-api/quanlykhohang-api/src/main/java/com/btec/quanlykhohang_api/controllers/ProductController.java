@@ -1,11 +1,10 @@
 package com.btec.quanlykhohang_api.controllers;
 
 import com.btec.quanlykhohang_api.entities.Product;
-import com.btec.quanlykhohang_api.response.ProductDTO;
 import com.btec.quanlykhohang_api.services.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Optional;
@@ -20,41 +19,37 @@ public class ProductController {
 
     // ✅ Lấy tất cả sản phẩm
     @GetMapping
-    public List<ProductDTO> getAllProducts() {
-        return productService.getAllProducts();
+    public ResponseEntity<List<Product>> getAllProducts() {
+        List<Product> products = productService.getAllProducts();
+        return ResponseEntity.ok(products);
     }
 
     // ✅ Lấy sản phẩm theo ID
     @GetMapping("/{id}")
-    public Optional<ProductDTO> getProductById(@PathVariable String id) {
-        return productService.getProductById(id);
+    public ResponseEntity<Product> getProductById(@PathVariable String id) {
+        return productService.getProductById(id)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     // ✅ Tạo sản phẩm mới
     @PostMapping
-    public Product createProduct(@RequestBody Product product) {
-        return productService.createProduct(product);
+    public ResponseEntity<Product> createProduct(@RequestBody Product product) {
+        Product savedProduct = productService.createProduct(product);
+        return ResponseEntity.ok(savedProduct);
     }
 
     // ✅ Cập nhật sản phẩm
     @PutMapping("/{id}")
-    public Product updateProduct(@PathVariable String id, @RequestBody Product product) {
-        return productService.updateProduct(id, product);
+    public ResponseEntity<Product> updateProduct(@PathVariable String id, @RequestBody Product product) {
+        Product updatedProduct = productService.updateProduct(id, product);
+        return ResponseEntity.ok(updatedProduct);
     }
 
     // ✅ Xóa sản phẩm
     @DeleteMapping("/{id}")
-    public void deleteProduct(@PathVariable String id) {
+    public ResponseEntity<Void> deleteProduct(@PathVariable String id) {
         productService.deleteProduct(id);
-    }
-
-    // ✅ Upload ảnh cho sản phẩm (hỗ trợ file hoặc URL)
-    @PostMapping("/{id}/uploadImage")
-    public Product uploadProductImage(
-            @PathVariable String id,
-            @RequestParam(value = "file", required = false) MultipartFile file,
-            @RequestParam(value = "imageUrl", required = false) String imageUrl
-    ) {
-        return productService.uploadImage(id, file, imageUrl);
+        return ResponseEntity.noContent().build();
     }
 }
